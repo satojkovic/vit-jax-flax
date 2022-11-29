@@ -1,1 +1,1 @@
-# jaxvit
+# vit-jax-flax 
