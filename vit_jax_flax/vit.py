@@ -13,13 +13,13 @@ class Patches(nn.Module):
             features=self.embed_dim,
             kernel_size=(self.patch_size, self.patch_size),
             strides=(self.patch_size, self.patch_size),
-            padding='VALID'
+            padding="VALID",
         )
 
     def __call__(self, images):
         patches = self.conv(images)
         b, h, w, c = patches.shape
-        patches = jnp.reshape(patches, (b, h*w, c))
+        patches = jnp.reshape(patches, (b, h * w, c))
         return patches
 
 
@@ -33,18 +33,14 @@ class PatchEncoder(nn.Module):
         # Hidden dim
         x = nn.Dense(self.hidden_dim)(x)
         # Add cls token
-        cls = self.param(
-            'cls_token',
-            nn.initializers.zeros,
-            (1, 1, self.hidden_dim)
-        )
+        cls = self.param("cls_token", nn.initializers.zeros, (1, 1, self.hidden_dim))
         cls = jnp.tile(cls, (n, 1, 1))
         x = jnp.concatenate([cls, x], axis=1)
         # Add position embedding
         pos_embed = self.param(
-            'position_embedding',
+            "position_embedding",
             nn.initializers.normal(stddev=0.02),  # From BERT
-            (1, seq_len + 1, self.hidden_dim)
+            (1, seq_len + 1, self.hidden_dim),
         )
         return x + pos_embed
 
@@ -142,7 +138,9 @@ class ViT(nn.Module):
     def setup(self):
         self.patch_extracter = Patches(self.patch_size, self.embed_dim)
         self.patch_encoder = PatchEncoder(self.hidden_dim)
-        self.transformer = Transformer(self.embed_dim, self.hidden_dim, self.n_heads, self.drop_p, self.mlp_dim)
+        self.transformer = Transformer(
+            self.embed_dim, self.hidden_dim, self.n_heads, self.drop_p, self.mlp_dim
+        )
         self.mlp_head = MLP(self.mlp_dim, self.drop_p)
         self.cls_head = nn.Dense(features=self.num_classes)
 
