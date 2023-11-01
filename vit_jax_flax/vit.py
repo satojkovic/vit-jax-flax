@@ -66,10 +66,10 @@ class MultiHeadSelfAttention(nn.Module):
 
     def __call__(self, x, train=True):
         B, T, C = x.shape  # batch_size, seq_length, hidden_dim
-        N, D = self.n_heads, C // self.n_heads  # num_heads, head_dim
-        q = self.q_net(x).reshape(B, T, N, D).transpose(0, 2, 1, 3)  # (B, N, T, D)
-        k = self.k_net(x).reshape(B, T, N, D).transpose(0, 2, 1, 3)
-        v = self.v_net(x).reshape(B, T, N, D).transpose(0, 2, 1, 3)
+        N, Dh = self.n_heads, C // self.n_heads  # num_heads, head_dim
+        q = self.q_net(x).reshape(B, T, N, Dh).transpose(0, 2, 1, 3)  # (B, N, T, D)
+        k = self.k_net(x).reshape(B, T, N, Dh).transpose(0, 2, 1, 3)
+        v = self.v_net(x).reshape(B, T, N, Dh).transpose(0, 2, 1, 3)
 
         # weights (B, N, T, T)
         weights = jnp.matmul(q, jnp.swapaxes(k, -2, -1)) / math.sqrt(D)
@@ -80,7 +80,7 @@ class MultiHeadSelfAttention(nn.Module):
         attention = self.att_drop(attention, deterministic=not train)
 
         # gather heads
-        attention = attention.transpose(0, 2, 1, 3).reshape(B, T, N*D)
+        attention = attention.transpose(0, 2, 1, 3).reshape(B, T, N * Dh)
 
         # project
         out = self.proj_drop(self.proj_net(attention), deterministic=not train)
