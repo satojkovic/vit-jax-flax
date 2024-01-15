@@ -138,17 +138,20 @@ class ViT(nn.Module):
     def setup(self):
         self.patch_extracter = Patches(self.patch_size, self.embed_dim)
         self.patch_encoder = PatchEncoder(self.hidden_dim)
-        self.transformer = Transformer(
-            self.embed_dim, self.hidden_dim, self.n_heads, self.drop_p, self.mlp_dim
-        )
+        self.transformer_blocks = [
+            Transformer(
+                self.embed_dim, self.hidden_dim, self.n_heads, self.drop_p, self.mlp_dim
+            )
+            for _ in range(self.num_layers)
+        ]
         self.mlp_head = MLP(self.mlp_dim, self.drop_p)
         self.cls_head = nn.Dense(features=self.num_classes)
 
     def __call__(self, x, train=True):
         x = self.patch_extracter(x)
         x = self.patch_encoder(x)
-        for i in range(self.num_layers):
-            x = self.transformer(x, train)
+        for block in self.transformer_blocks:
+            x = block(x, train)
         # MLP head
         x = x[:, 0]  # [CLS] token
         x = self.mlp_head(x, train)
